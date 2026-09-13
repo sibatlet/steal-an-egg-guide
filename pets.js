@@ -53,7 +53,17 @@ if (typeof document!=='undefined') {
     art.append(fallback,badge);
     if(pet.image) {
       let valid=false;try {const u=new URL(pet.image);valid=u.protocol==='https:' && u.hostname==='static.wikia.nocookie.net';}catch{}
-      if(valid) {const img=el('img');img.src=pet.image;img.alt=pet.name;img.width=180;img.height=150;img.loading='lazy';img.decoding='async';img.addEventListener('load',()=>fallback.hidden=true);img.addEventListener('error',()=>{img.remove();fallback.hidden=false;});art.append(img);}
+      if(valid) {
+        const img=el('img');
+        // Fandom returns a placeholder when the request includes an external referrer.
+        img.referrerPolicy='no-referrer';
+        const imageUrl=new URL(pet.image);
+        imageUrl.searchParams.set('eggquest','photos-v2'); // Discard previously cached placeholders.
+        img.alt=pet.name;img.width=180;img.height=150;img.loading='lazy';img.decoding='async';
+        img.addEventListener('load',()=>fallback.hidden=true);
+        img.addEventListener('error',()=>{img.remove();fallback.hidden=false;});
+        img.src=imageUrl.href;art.append(img);
+      }
     }
     const body=el('div','pet-card-body');
     body.append(el('p','pet-biome',BIOMES[pet.biome] || pet.biome || 'Локация уточняется'),el('h2','',pet.name));
