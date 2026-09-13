@@ -1,0 +1,34 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const {selectPets,money,growTime,acquisition} = require('../pets.js');
+const data = JSON.parse(fs.readFileSync(require('node:path').join(__dirname,'../data/pets.json'),'utf8'));
+const pets = data.pets;
+assert.equal(new Set(pets.map(p=>p.name)).size,pets.length);
+assert(pets.length>=160);
+assert.equal(selectPets(pets,{q:'  dOg '})[0].name,'Dog');
+assert.equal(selectPets(pets,{q:'собака'})[0].name,'Dog');
+assert(selectPets(pets,{q:'дракон'}).length>0);
+assert.deepEqual(selectPets(pets,{q:'дракон'}).map(p=>p.name),selectPets(pets,{q:'dragon'}).map(p=>p.name));
+assert.equal(selectPets(pets,{q:'<script>alert(1)</script>'}).length,0);
+assert(selectPets(pets,{q:'T-Rex'}).some(p=>p.name==='T-Rex'));
+assert.equal(selectPets(pets,{q:'несуществующийпитомец'}).length,0);
+assert(selectPets(pets,{rarity:'Common',biome:'Forest'}).every(p=>p.rarity==='Common'&&p.biome==='Forest'));
+const asc=selectPets(pets,{sort:'income-asc'}),desc=selectPets(pets,{sort:'income-desc'});
+assert.equal(asc[0].name,'Chicken');
+assert.equal(desc[0].name,'Luminous Cthulhu');
+assert.equal(asc.at(-1).income,null);
+assert.equal(desc.at(-1).income,null);
+assert.equal(pets.find(p=>p.name==='Dog').income,2);
+assert.equal(pets.find(p=>p.name==='Mutant Shark').income,215000000);
+assert.equal(pets.find(p=>p.name==='Light Dove').income,null);
+assert.deepEqual(pets.find(p=>p.name==='Light Dove').incomeVariants,[225,225000]);
+assert.equal(growTime('1h 30m'),'1 ч 30 мин');
+assert.equal(growTime(null),'Нет данных');
+assert.equal(money(null),'Уточняется');
+for(const pet of pets){
+  assert(acquisition(pet).length>30);
+  assert(pet.income===null || (Number.isFinite(pet.income)&&pet.income>=0));
+  assert(pet.sources.every(url=>new URL(url).hostname==='stealanegg.fandom.com'));
+  assert(!pet.image || new URL(pet.image).hostname==='static.wikia.nocookie.net');
+}
+console.log('Catalog checks passed: '+pets.length+' pets, bilingual search, combined filters, sorting, unknown data, source URLs.');
